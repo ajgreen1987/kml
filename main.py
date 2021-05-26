@@ -25,6 +25,9 @@ def parse_drives(file_name):
         for e in doc.Document.Placemark:
             driving_label = 'Driving'
 
+            total_miles = 0
+            total_hours = 0
+            
             if driving_label in e.name.text:
                 description_text = e.description.text
                 date_times = re.findall(
