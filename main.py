@@ -1,8 +1,16 @@
 import re
+import os
+
+from os import path
+from kivy.app import App
+from kivy.uix.widget import Widget
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.floatlayout import FloatLayout
+from kivy.factory import Factory
+from kivy.properties import ObjectProperty
+from kivy.uix.popup import Popup
 from datetime import datetime
 from pykml import parser
-from os import path
-
 
 def extractDateAndTime(date_time_string):
     # Python ISO8601 can't handle the Z
@@ -21,13 +29,15 @@ def parse_drives(file_name):
     kml_file = path.join(file_name)
 
     with open(kml_file) as f:
+
+        drives = []
         doc = parser.parse(f).getroot()
         for e in doc.Document.Placemark:
             driving_label = 'Driving'
 
             total_miles = 0
             total_hours = 0
-            
+
             if driving_label in e.name.text:
                 description_text = e.description.text
                 date_times = re.findall(
@@ -43,15 +53,53 @@ def parse_drives(file_name):
                 mileage = calculateMileage(re.findall(
                     r'\d+m', description_text)[0][:-1])
 
-                print("On " + str(start_datetime.month) + "/" + str(start_datetime.day) + " from " + str(start_datetime.hour) + ":" + str(start_datetime.minute) +
+                drives.append("On " + str(start_datetime.month) + "/" + str(start_datetime.day) + " from " + str(start_datetime.hour) + ":" + str(start_datetime.minute) +
                       " to " + str(end_datetime.hour) + ":" + str(end_datetime.minute) + " you drove " +
                       str(mileage) + " miles!")
 
+    return drives                 
+
+class LoadDialog(FloatLayout):
+    load = ObjectProperty(None)
+    cancel = ObjectProperty(None)
+class Root(FloatLayout):
+    loadfile = ObjectProperty(None)
+    savefile = ObjectProperty(None)
+    text_input = ObjectProperty(None)
+
+    def dismiss_popup(self):
+        self._popup.dismiss()
+
+    def show_load(self):
+        content = LoadDialog(load=self.load, cancel=self.dismiss_popup)
+        self._popup = Popup(title="Load file", content=content,
+                            size_hint=(0.9, 0.9))
+        self._popup.open()
+
+    def load(self, path, filename):
+        test_file = filename[0]
+        drives = parse_drives(test_file)
+
+        for drive in drives:
+            self.text_input.text += drive + "\n"
+
+        self.dismiss_popup()
+    
+    def clear(self):
+        self.text_input.text = ''
+
+        self.dismiss_popup()
+
+
+class KMLApp(App):
+    def build(self):
+        pass
 
 def main():
-    test_file = 'test.kml'
-    parse_drives(test_file)
+    KMLApp().run()
 
+Factory.register('Root', cls=Root)
+Factory.register('LoadDialog', cls=LoadDialog)
 
 if __name__ == "__main__":
     main()

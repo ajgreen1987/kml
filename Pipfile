@@ -5,6 +5,9 @@ name = "pypi"
 
 [packages]
 pykml = "*"
+kivy = "*"
+kivymd = "*"
+pygame = "*"
 
 [dev-packages]
 autopep8 = "*"
